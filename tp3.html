@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance & Participation</title>
+
+<style>
+  body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #f8f9fa;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+th, td {
+  border: 1px solid #aaa;
+  padding: 8px;
+  text-align: center;
+}
+
+tr.green { background-color: #c3f7c0; }
+tr.yellow { background-color: #fff9b0; }
+tr.red { background-color: #f7c0c0; }
+
+.error {
+  color: red;
+  font-size: 0.9em;
+}
+
+#report {
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+#confirmMsg {
+  color: green;
+  margin-top: 10px;
+}
+
+/* Modern Add Student form styles */
+.form-card {
+  max-width: 720px;
+  background: #fff;
+  padding: 18px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(20,20,20,0.08);
+  margin-bottom: 20px;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 18px;
+  align-items: end;
+}
+.form-row {
+  display: flex;
+  flex-direction: column;
+}
+.form-row label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 0.95em;
+  color: #333;
+}
+.form-row input {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccd0d5;
+  background: #fbfcfd;
+  outline: none;
+  transition: box-shadow .12s ease, border-color .12s ease;
+  font-size: 0.95em;
+}
+.form-row input:focus { border-color: #4a90e2; box-shadow: 0 4px 12px rgba(74,144,226,0.12); }
+.form-actions { grid-column: 1 / -1; display:flex; align-items:center; gap:12px; }
+.btn-primary {
+  background: linear-gradient(180deg,#3b82f6,#2563eb);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(37,99,235,0.18);
+}
+.btn-primary:active { transform: translateY(1px); }
+.error { color: #d0342c; font-size: 0.85em; margin-top:6px; }
+.confirm { color: #0a8a3d; font-weight:600; margin:0; }
+.sr-only { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+
+.controls { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+.btn-secondary {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-secondary:active { transform: translateY(1px); }
+
+.search-row { margin: 12px 0; display:flex; gap:8px; align-items:center; }
+.search-row input[type="search"] { padding:8px 10px; border-radius:6px; border:1px solid #ccd0d5; width:320px; }
+.sort-status { margin-top:8px; font-style:italic; color:#374151; }
+
+@media (max-width: 500px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-card { padding: 14px; }
+}
+
+/* Report styles */
+#report { margin-top: 15px; font-weight: 600; }
+.report-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 18px rgba(20,20,20,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+  max-width: 760px;
+}
+.report-summary { display:flex; gap:18px; flex-wrap:wrap; margin-bottom:10px; }
+.report-summary p { margin:0; font-size:0.95em; color:#222; }
+.report-row { display:flex; align-items:center; gap:12px; margin:8px 0; }
+.report-label { width:110px; font-weight:700; color:#333; }
+.report-bar-wrap { flex:1; background:#eef4ff; height:18px; border-radius:10px; overflow:hidden; }
+.report-bar { height:100%; border-radius:10px 0 0 10px; transition: width .35s ease; }
+.report-bar.present { background: linear-gradient(90deg,#60a5fa,#2563eb); }
+.report-bar.participated { background: linear-gradient(90deg,#86efac,#10b981); }
+.report-value { width:56px; text-align:right; font-weight:700; color:#222; }
+
+/* Hover highlight for table rows (jQuery handlers will toggle this) */
+.hover-highlight td {
+  background-color: rgba(58,123,213,0.08) !important;
+}
+
+/* Excellent students animation */
+.excellent-animate td {
+  animation: pulseExcellent 1s ease-in-out infinite alternate;
+}
+@keyframes pulseExcellent {
+  from { background-color: rgba(99,102,241,0.14); }
+  to   { background-color: rgba(99,102,241,0.30); }
+}
+
+</style>
+</head>
+<body>
+<h1>Attendance Management</h1>
+
+<div class="search-row">
+  <label for="searchName">Search by Name: </label>
+  <input type="search" id="searchName" placeholder="Type last or first name..." />
+</div>
+
+<!-- Exercise 1: Attendance Table -->
+<table id="attendanceTable" aria-label="Attendance table">
+  <caption>Tutorial 2 — Attendance (JS implementation)</caption>
+  <thead>
+    <tr>
+      <th rowspan="2">Last Name</th>
+      <th rowspan="2">First Name</th>
+     
+      <th colspan="2">S1</th>
+      <th colspan="2">S2</th>
+      <th colspan="2">S3</th>
+      <th colspan="2">S4</th>
+      <th colspan="2">S5</th>
+      <th colspan="2">S6</th>
+      <th rowspan="2">Absences</th>
+      <th rowspan="2">Participations</th>
+      <th rowspan="2">Message</th>
+    </tr>
+    <tr>
+     
+      <th>P</th><th>Pa</th>
+      <th>P</th><th>Pa</th>
+      <th>P</th><th>Pa</th>
+      <th>P</th><th>Pa</th>
+      <th>P</th><th>Pa</th>
+      <th>P</th><th>Pa</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    
+    <tr data-student-index="0">
+      <td class="student-name">ahmed</td>
+      <td class="student-name">sara</td>
+      
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td class="absences small">0</td>
+      <td class="parts small">0</td>
+      <td class="message small"></td>
+    </tr>
+    <tr data-student-index="1">
+      <td class="student-name">yacine</td>
+      <td class="student-name">amira</td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
+      <td class="absences small">0</td>
+      <td class="parts small">0</td>
+      <td class="message small"></td>
+    </tr>
+    <tr data-student-index="2">
+      <td class="student-name">anes</td>
+      <td class="student-name">lyna</td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
+      <td class="absences small">0</td>
+      <td class="parts small">0</td>
+      <td class="message small"></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Exercise 2 & 3: Add Student Form -->
+<h2>Add Student</h2>
+<div class="form-card" aria-labelledby="addStudentTitle">
+  <h3 id="addStudentTitle" class="sr-only">Add a new student</h3>
+  <form id="studentForm" class="form-grid" novalidate>
+    <div class="form-row">
+      <label for="studentId">Student ID</label>
+      <input type="text" id="studentId" name="studentId" placeholder="e.g. 20251234" aria-describedby="idError" />
+      <span class="error" id="idError" aria-live="polite"></span>
+    </div>
+
+    <div class="form-row">
+      <label for="lastName">Last Name</label>
+      <input type="text" id="lastName" name="lastName" placeholder="Doe" aria-describedby="lastError" />
+      <span class="error" id="lastError" aria-live="polite"></span>
+    </div>
+
+    <div class="form-row">
+      <label for="firstName">First Name</label>
+      <input type="text" id="firstName" name="firstName" placeholder="John" aria-describedby="firstError" />
+      <span class="error" id="firstError" aria-live="polite"></span>
+    </div>
+
+    <div class="form-row">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="john.doe@example.com" aria-describedby="emailError" />
+      <span class="error" id="emailError" aria-live="polite"></span>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary">Add Student</button>
+      <p id="confirmMsg" class="confirm" aria-live="polite"></p>
+    </div>
+  </form>
+</div>
+
+<!-- Exercise 4: Report -->
+<div class="controls">
+  <button id="showReport">Show Report</button>
+  <button id="highlightExcellent" class="btn-secondary">Highlight Excellent Students</button>
+  <button id="resetColors" class="btn-secondary">Reset Colors</button>
+  <button id="sortAbsences" class="btn-secondary">Sort by Absences (Ascending)</button>
+  <button id="sortParticipation" class="btn-secondary">Sort by Participation (Descending)</button>
+</div>
+<div id="sortStatus" class="sort-status" aria-live="polite"></div>
+<div id="report"></div>
+
+<!-- jQuery (used for hover & row click behavior) -->
+<!-- Using CDN without SRI to avoid integrity mismatch during local testing -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  // === Exercise 1 - 4: Interactive attendance table ===
+(function () {
+  const TOTAL_SESSIONS = 6;
+
+  function updateRow(row) {
+    const presentInputs = Array.from(row.querySelectorAll('input.present'));
+    const partInputs = Array.from(row.querySelectorAll('input.part'));
+
+    const presentCount = presentInputs.reduce((s, cb) => s + (cb.checked ? 1 : 0), 0);
+    const partCount = partInputs.reduce((s, cb) => s + (cb.checked ? 1 : 0), 0);
+    const absences = TOTAL_SESSIONS - presentCount;
+
+    // Update cells (index.html uses classes: 'absences' and 'parts')
+    const absCell = row.querySelector('.absences');
+    const partsCell = row.querySelector('.parts');
+    const msgCell = row.querySelector('.message');
+
+    if (absCell) absCell.textContent = absences;
+    if (partsCell) partsCell.textContent = partCount;
+
+    // Row coloring
+    row.classList.remove('green', 'yellow', 'red');
+    if (absences < 3) row.classList.add('green');
+    else if (absences < 5) row.classList.add('yellow');
+    else row.classList.add('red');
+
+    // Message logic
+    let baseMsg = '';
+    if (absences >= 5) baseMsg = 'Excluded – too many absences – You need to participate more';
+    else if (absences >= 3) baseMsg = 'Warning – attendance low – You need to participate more';
+    else baseMsg = 'Good attendance – Excellent participation';
+
+    if (partCount <= 1 && absences < 5) {
+      if (absences < 3) baseMsg = 'Good attendance – Participation low. You should participate more';
+      else baseMsg = baseMsg + ' – Participation low';
+    }
+
+    if (msgCell) msgCell.textContent = baseMsg;
+  }
+
+  function updateAll() {
+    document.querySelectorAll('#attendanceTable tbody tr').forEach(updateRow);
+  }
+
+  // Wire change listeners for inputs inside `root` (defaults to document)
+  function wireInputs(root = document) {
+    // Use a relative selector so calling wireInputs(newRow) works properly
+    root.querySelectorAll('input.present, input.part')
+      .forEach(input => input.addEventListener('change', updateAll));
+  }
+
+  // Validation & add-student handler
+  document.getElementById('studentForm').addEventListener('submit', e => {
+    e.preventDefault();
+    let valid = true;
+
+    const id = document.getElementById('studentId').value.trim();
+    const last = document.getElementById('lastName').value.trim();
+    const first = document.getElementById('firstName').value.trim();
+    const email = document.getElementById('email').value.trim();
+
+    document.querySelectorAll('.error').forEach(el => el.textContent = '');
+
+    if (!/^[0-9]+$/.test(id)) {
+      document.getElementById('idError').textContent = 'ID must contain only numbers.';
+      valid = false;
+    }
+    if (!/^[A-Za-z]+$/.test(last)) {
+      document.getElementById('lastError').textContent = 'Last name must contain only letters.';
+      valid = false;
+    }
+    if (!/^[A-Za-z]+$/.test(first)) {
+      document.getElementById('firstError').textContent = 'First name must contain only letters.';
+      valid = false;
+    }
+    if (!/^[\w.-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(email)) {
+      document.getElementById('emailError').textContent = 'Invalid email format.';
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    const tbody = document.querySelector('#attendanceTable tbody');
+    const newRow = document.createElement('tr');
+
+    // Build cells: last, first, then for each session a present and part checkbox
+    let html = `\n      <td class="student-name">${last}</td>\n      <td class="student-name">${first}</td>`;
+    for (let i = 0; i < TOTAL_SESSIONS; i++) {
+      html += `\n        <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>`;
+    }
+    html += `\n      <td class="absences small">0</td>\n      <td class="parts small">0</td>\n      <td class="message small"></td>`;
+
+    newRow.innerHTML = html;
+
+    // assign a data-student-index to match existing rows
+    const currentIndex = tbody.querySelectorAll('tr').length;
+    newRow.setAttribute('data-student-index', String(currentIndex));
+
+    tbody.appendChild(newRow);
+
+    // Wire listeners for new inputs and update counts
+    wireInputs(newRow);
+    updateRow(newRow);
+
+    const confirmEl = document.getElementById('confirmMsg');
+    confirmEl.textContent = 'Student added successfully!';
+    // clear confirmation after 3 seconds
+    setTimeout(() => {
+      if (confirmEl.textContent === 'Student added successfully!') confirmEl.textContent = '';
+    }, 3000);
+
+    e.target.reset();
+  });
+
+  // Show report button
+  document.getElementById('showReport').addEventListener('click', () => {
+    const rows = document.querySelectorAll('#attendanceTable tbody tr');
+    const total = rows.length;
+    let present = 0, participated = 0;
+
+    rows.forEach(row => {
+      const presentInputs = Array.from(row.querySelectorAll('input.present'));
+      const partInputs = Array.from(row.querySelectorAll('input.part'));
+      if (presentInputs.some(i => i.checked)) present++;
+      if (partInputs.some(i => i.checked)) participated++;
+    });
+
+    const report = document.getElementById('report');
+    const max = Math.max(total, present, participated, 1);
+
+    report.innerHTML = `\n      <div class="report-card">\n        <div class="report-summary">\n          <p>Total students: <strong>${total}</strong></p>\n          <p>Students present: <strong>${present}</strong></p>\n          <p>Students participated: <strong>${participated}</strong></p>\n        </div>\n\n        <div class="report-row">\n          <div class="report-label">Present</div>\n          <div class="report-bar-wrap"><div class="report-bar present" style="width:${Math.round((present / max) * 100)}%"></div></div>\n          <div class="report-value">${present}</div>\n        </div>\n\n        <div class="report-row">\n          <div class="report-label">Participated</div>\n          <div class="report-bar-wrap"><div class="report-bar participated" style="width:${Math.round((participated / max) * 100)}%"></div></div>\n          <div class="report-value">${participated}</div>\n        </div>\n      </div>\n    `;
+  });
+
+  // Initial wiring and first update
+  wireInputs();
+  updateAll();
+})();
+
+// === jQuery-based interactions: hover highlight and row click message ===
+$(function () {
+  // highlight row on mouse enter, remove on leave
+  $('#attendanceTable tbody')
+    .on('mouseenter', 'tr', function () {
+      $(this).addClass('hover-highlight');
+    })
+    .on('mouseleave', 'tr', function () {
+      $(this).removeClass('hover-highlight');
+    })
+    .on('click', 'tr', function () {
+      // Find last name and first name (table stores last then first)
+      const $cells = $(this).find('td.student-name');
+      const last = $cells.eq(0).text().trim();
+      const first = $cells.eq(1).text().trim();
+      const abs = $(this).find('.absences').text().trim();
+
+      // Show message box with full name and absences
+      alert('Student: ' + first + ' ' + last + '\nAbsences: ' + abs);
+    });
+});
+
+// Highlight excellent students (absences < 3) with animation and reset
+$(function () {
+  $('#highlightExcellent').on('click', function () {
+    $('#attendanceTable tbody tr').each(function () {
+      const absText = $(this).find('.absences').text().trim();
+      const abs = parseInt(absText, 10) || 0;
+      if (abs < 3) {
+        $(this).addClass('excellent-animate');
+      }
+    });
+  });
+
+  $('#resetColors').on('click', function () {
+    // Remove our excellent animation class; leave status color classes intact
+    $('#attendanceTable tbody tr').removeClass('excellent-animate');
+  });
+});
+
+// Search and sort features (filtering and reordering rows)
+$(function () {
+  // Search by name (first or last)
+  $('#searchName').on('input', function () {
+    const q = $(this).val().toLowerCase().trim();
+    $('#attendanceTable tbody tr').each(function () {
+      const names = $(this).find('td.student-name').map(function () { return $(this).text().toLowerCase(); }).get().join(' ');
+      const match = q === '' || names.indexOf(q) !== -1;
+      $(this).toggle(match);
+    });
+  });
+
+  // Sort helper: reappend rows in order and update data-student-index
+  function reappendRows(rows) {
+    const $tbody = $('#attendanceTable tbody');
+    $.each(rows, function (i, row) {
+      $tbody.append(row);
+      $(row).attr('data-student-index', i);
+    });
+  }
+
+  // Sort by absences ascending
+  $('#sortAbsences').on('click', function () {
+    const rows = $('#attendanceTable tbody tr').get();
+    rows.sort(function (a, b) {
+      const aVal = parseInt($(a).find('.absences').text(), 10) || 0;
+      const bVal = parseInt($(b).find('.absences').text(), 10) || 0;
+      return aVal - bVal;
+    });
+    reappendRows(rows);
+    $('#sortStatus').text('Currently sorted by absences (ascending)');
+  });
+
+  // Sort by participation (parts) descending
+  $('#sortParticipation').on('click', function () {
+    const rows = $('#attendanceTable tbody tr').get();
+    rows.sort(function (a, b) {
+      const aVal = parseInt($(a).find('.parts').text(), 10) || 0;
+      const bVal = parseInt($(b).find('.parts').text(), 10) || 0;
+      return bVal - aVal;
+    });
+    reappendRows(rows);
+    $('#sortStatus').text('Currently sorted by participation (descending)');
+  });
+});
+
+</script>
+</body>
+</html>

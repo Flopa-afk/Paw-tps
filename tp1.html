@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>/* Base: Mobile first */
+        body {
+           font-size: 14px;
+            background-color: #f0f0f0;
+        }
+
+        /* Tablet */
+        @media (min-width: 600px) {
+            body {
+            font-size: 16px;
+            background-color: #7c8286;
+            }
+        } 
+
+        /* Desktop */
+        /* @media (min-width: 1024px) {
+         body {
+            font-size: 18px;
+            background-color: #aed6f1;
+        }
+        }  */
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="home.html">Home</a> 
+        <a href="#attendance">Attendance List</a> 
+        <a href="Addstudent.html">Add Student</a> 
+        <a href="Reports.html">Reports</a> 
+        <a href="Logout.html">Logout</a>
+    </nav>
+    <hr>
+    <table id="attendance" border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th rowspan="2">last name</th>
+                <th rowspan="2">first name</th>
+
+                <th colspan="2">S1</th>
+                <th colspan="2">S2</th>
+                <th colspan="2">S3</th>
+                <th colspan="2">S4</th>
+                <th colspan="2">S5</th>
+                <th colspan="2">S6</th>
+
+
+                <th rowspan="2">absences</th>
+                <th rowspan="2">participations</th>
+            </tr>
+            <tr>
+                <th>p</th><th>pa</th>
+                <th>p</th><th>pa</th>
+                <th>p</th><th>pa</th>
+                <th>p</th><th>pa</th>
+                <th>p</th><th>pa</th>
+                <th>p</th><th>pa</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Ahmed</td><td>Sarah</td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+            </tr>
+
+             <tr>
+                <td>Yacine</td><td>Ali</td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+            </tr>
+
+             <tr>
+                <td>Houcine</td><td>Rania</td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+                <td></td><td></td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>Add a new student to a group</h2>
+        <form>
+        <div>
+            <label for="Id" >Student ID :</label>
+            <input type="text" id="Id" name="studentId" required>
+        </div>
+            <br>
+        <div>
+            <label for="last" >last name :</label>
+            <input type="text" id="last" name="lastname" required>
+        </div>
+            <br>
+        <div>
+            <label for="first" >first name :</label>
+            <input type="text" id="first" name="firstname" required>
+        </div>
+            <br>
+        <div>
+            <label for="email" >email :</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+
+            <br>
+        <div>
+            <input type="submit" value="Submit">
+        </div>
+            
+        </form>
+
+    <!-- Navigation links moved to the top; remove duplicates here -->
+
