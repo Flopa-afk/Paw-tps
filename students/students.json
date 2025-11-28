@@ -1,0 +1,38 @@
+[
+    {
+        "student_id": "5765147512",
+        "name": "YASSEER",
+        "group": "3",
+        "created_at": "2025-11-28T16:52:29+00:00"
+    },
+    {
+        "student_id": "45258",
+        "name": "Anes",
+        "group": "3",
+        "created_at": "2025-11-28T16:55:01+00:00"
+    },
+    {
+        "student_id": "2025112801",
+        "name": "ahmed sara",
+        "group": "3",
+        "created_at": "2025-11-28T17:00:00+00:00"
+    },
+    {
+        "student_id": "2025112802",
+        "name": "yacine amira",
+        "group": "3",
+        "created_at": "2025-11-28T17:01:00+00:00"
+    },
+    {
+        "student_id": "2025112803",
+        "name": "anes lyna",
+        "group": "3",
+        "created_at": "2025-11-28T17:02:00+00:00"
+    },
+    {
+        "student_id": "202231965377",
+        "name": "wail chikouche",
+        "group": "2",
+        "created_at": "2025-11-28T17:09:19+00:00"
+    }
+]

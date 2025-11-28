@@ -188,48 +188,8 @@ tr.red { background-color: #f7c0c0; }
     </tr>
   </thead>
 
-  <tbody>
-    
-    <tr data-student-index="0">
-      <td class="student-name">ahmed</td>
-      <td class="student-name">sara</td>
-      
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td class="absences small">0</td>
-      <td class="parts small">0</td>
-      <td class="message small"></td>
-    </tr>
-    <tr data-student-index="1">
-      <td class="student-name">yacine</td>
-      <td class="student-name">amira</td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" checked /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
-      <td class="absences small">0</td>
-      <td class="parts small">0</td>
-      <td class="message small"></td>
-    </tr>
-    <tr data-student-index="2">
-      <td class="student-name">anes</td>
-      <td class="student-name">lyna</td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" checked /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>
-      <td class="absences small">0</td>
-      <td class="parts small">0</td>
-      <td class="message small"></td>
-    </tr>
+  <tbody id="attendanceBody">
+    <!-- rows are loaded dynamically from students.json -->
   </tbody>
 </table>
 
@@ -237,29 +197,23 @@ tr.red { background-color: #f7c0c0; }
 <h2>Add Student</h2>
 <div class="form-card" aria-labelledby="addStudentTitle">
   <h3 id="addStudentTitle" class="sr-only">Add a new student</h3>
-  <form id="studentForm" class="form-grid" novalidate>
+  <form id="studentForm" class="form-grid" novalidate method="post" action="">
     <div class="form-row">
       <label for="studentId">Student ID</label>
-      <input type="text" id="studentId" name="studentId" placeholder="e.g. 20251234" aria-describedby="idError" />
+      <input type="text" id="studentId" name="student_id" placeholder="e.g. 20251234" aria-describedby="idError" />
       <span class="error" id="idError" aria-live="polite"></span>
     </div>
 
     <div class="form-row">
-      <label for="lastName">Last Name</label>
-      <input type="text" id="lastName" name="lastName" placeholder="Doe" aria-describedby="lastError" />
-      <span class="error" id="lastError" aria-live="polite"></span>
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" placeholder="Doe John" aria-describedby="nameError" />
+      <span class="error" id="nameError" aria-live="polite"></span>
     </div>
 
     <div class="form-row">
-      <label for="firstName">First Name</label>
-      <input type="text" id="firstName" name="firstName" placeholder="John" aria-describedby="firstError" />
-      <span class="error" id="firstError" aria-live="polite"></span>
-    </div>
-
-    <div class="form-row">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="john.doe@example.com" aria-describedby="emailError" />
-      <span class="error" id="emailError" aria-live="polite"></span>
+      <label for="group">Group</label>
+      <input type="text" id="group" name="group" placeholder="e.g. G1" aria-describedby="groupError" />
+      <span class="error" id="groupError" aria-live="polite"></span>
     </div>
 
     <div class="form-actions">
@@ -285,8 +239,46 @@ tr.red { background-color: #f7c0c0; }
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
   // === Exercise 1 - 4: Interactive attendance table ===
-(function () {
+(async function () {
   const TOTAL_SESSIONS = 6;
+
+  // helper to escape text for insertion into the DOM
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Load students from students.json and populate the table
+  async function loadStudents() {
+    try {
+      const res = await fetch('students.json', {cache: 'no-store'});
+      if (!res.ok) return;
+      const students = await res.json();
+      const tbody = document.getElementById('attendanceBody');
+      tbody.innerHTML = '';
+      students.forEach((stu, idx) => {
+        // name may be "last first" or single token; split accordingly
+        const name = (stu.name || '').trim();
+        const parts = name.split(/\s+/);
+        const last = parts.length > 1 ? parts[0] : parts[0] || '';
+        const first = parts.length > 1 ? parts.slice(1).join(' ') : '';
+
+        // build a row with 6 sessions (present + part per session)
+        let row = document.createElement('tr');
+        row.setAttribute('data-student-index', idx);
+        row.innerHTML = `
+          <td class="student-name">${escapeHtml(last)}</td>
+          <td class="student-name">${escapeHtml(first)}</td>
+          ${Array.from({length: TOTAL_SESSIONS}).map(() => '<td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>').join('')}
+          <td class="absences small">0</td>
+          <td class="parts small">0</td>
+          <td class="message small"></td>
+        `;
+        tbody.appendChild(row);
+      });
+    } catch (e) {
+      console.error('Failed to load students.json', e);
+    }
+  }
 
   function updateRow(row) {
     const presentInputs = Array.from(row.querySelectorAll('input.present'));
@@ -335,68 +327,8 @@ tr.red { background-color: #f7c0c0; }
       .forEach(input => input.addEventListener('change', updateAll));
   }
 
-  // Validation & add-student handler
-  document.getElementById('studentForm').addEventListener('submit', e => {
-    e.preventDefault();
-    let valid = true;
-
-    const id = document.getElementById('studentId').value.trim();
-    const last = document.getElementById('lastName').value.trim();
-    const first = document.getElementById('firstName').value.trim();
-    const email = document.getElementById('email').value.trim();
-
-    document.querySelectorAll('.error').forEach(el => el.textContent = '');
-
-    if (!/^[0-9]+$/.test(id)) {
-      document.getElementById('idError').textContent = 'ID must contain only numbers.';
-      valid = false;
-    }
-    if (!/^[A-Za-z]+$/.test(last)) {
-      document.getElementById('lastError').textContent = 'Last name must contain only letters.';
-      valid = false;
-    }
-    if (!/^[A-Za-z]+$/.test(first)) {
-      document.getElementById('firstError').textContent = 'First name must contain only letters.';
-      valid = false;
-    }
-    if (!/^[\w.-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(email)) {
-      document.getElementById('emailError').textContent = 'Invalid email format.';
-      valid = false;
-    }
-
-    if (!valid) return;
-
-    const tbody = document.querySelector('#attendanceTable tbody');
-    const newRow = document.createElement('tr');
-
-    // Build cells: last, first, then for each session a present and part checkbox
-    let html = `\n      <td class="student-name">${last}</td>\n      <td class="student-name">${first}</td>`;
-    for (let i = 0; i < TOTAL_SESSIONS; i++) {
-      html += `\n        <td><input class="present" type="checkbox" /></td><td><input class="part" type="checkbox" /></td>`;
-    }
-    html += `\n      <td class="absences small">0</td>\n      <td class="parts small">0</td>\n      <td class="message small"></td>`;
-
-    newRow.innerHTML = html;
-
-    // assign a data-student-index to match existing rows
-    const currentIndex = tbody.querySelectorAll('tr').length;
-    newRow.setAttribute('data-student-index', String(currentIndex));
-
-    tbody.appendChild(newRow);
-
-    // Wire listeners for new inputs and update counts
-    wireInputs(newRow);
-    updateRow(newRow);
-
-    const confirmEl = document.getElementById('confirmMsg');
-    confirmEl.textContent = 'Student added successfully!';
-    // clear confirmation after 3 seconds
-    setTimeout(() => {
-      if (confirmEl.textContent === 'Student added successfully!') confirmEl.textContent = '';
-    }, 3000);
-
-    e.target.reset();
-  });
+  // The add-student form now posts to `add-student.php` using method="post".
+  // Client-side validation or AJAX enhancement can be added here if desired.
 
   // Show report button
   document.getElementById('showReport').addEventListener('click', () => {
@@ -418,6 +350,7 @@ tr.red { background-color: #f7c0c0; }
   });
 
   // Initial wiring and first update
+  await loadStudents();
   wireInputs();
   updateAll();
 })();
@@ -431,17 +364,19 @@ $(function () {
     })
     .on('mouseleave', 'tr', function () {
       $(this).removeClass('hover-highlight');
-    })
-    .on('click', 'tr', function () {
-      // Find last name and first name (table stores last then first)
-      const $cells = $(this).find('td.student-name');
-      const last = $cells.eq(0).text().trim();
-      const first = $cells.eq(1).text().trim();
-      const abs = $(this).find('.absences').text().trim();
-
-      // Show message box with full name and absences
-      alert('Student: ' + first + ' ' + last + '\nAbsences: ' + abs);
     });
+
+  // Show alert ONLY when clicking on student name cells
+  $('#attendanceTable tbody').on('click', 'td.student-name', function () {
+    const $row = $(this).closest('tr');
+    const $cells = $row.find('td.student-name');
+    const last = $cells.eq(0).text().trim();
+    const first = $cells.eq(1).text().trim();
+    const abs = $row.find('.absences').text().trim();
+
+    // Show message box with full name and absences
+    alert('Student: ' + first + ' ' + last + '\nAbsences: ' + abs);
+  });
 });
 
 // Highlight excellent students (absences < 3) with animation and reset
